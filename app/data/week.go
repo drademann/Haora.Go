@@ -17,6 +17,7 @@
 package data
 
 import (
+	"github.com/drademann/haora/app/datetime"
 	"github.com/drademann/haora/cmd/config"
 	"time"
 )
@@ -39,4 +40,21 @@ func (w Week) TotalOvertimeDuration() (time.Duration, bool) {
 		return 0, false
 	}
 	return w.TotalWorkDuration() - durationPerWeek, true
+}
+
+// SuggestedFinish returns a suggested finish time for the week.
+// Only returns a suggestion when the calculated time fits in the day (is earlier than 23:59).
+func (w Week) SuggestedFinish() (time.Time, bool) {
+	durationPerWeek, exist := config.DurationPerWeek()
+	if !exist {
+		return time.Time{}, false
+	}
+	remainingWeekDuration := durationPerWeek - w.TotalWorkDuration()
+	if remainingWeekDuration > 0 {
+		s := datetime.Now().Add(remainingWeekDuration)
+		if isSameDay(s, datetime.Now()) {
+			return s, true
+		}
+	}
+	return time.Time{}, false
 }
